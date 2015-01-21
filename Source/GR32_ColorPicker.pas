@@ -46,7 +46,14 @@ uses
   Classes, Controls, Forms, GR32, GR32_Polygons, GR32_Containers,
   GR32_ColorGradients;
 
+{$IFDEF COMPILER7}
+  {$DEFINE NOIMP_MOUSEENTERLEAVE}
+{$ENDIF}
+
 type
+  TAdjustCalc = procedure (X, Y: Single) of object;
+  TPreserveComponent = set of (pcHue, pcSaturation, pcLuminance, pcValue);
+
   TScreenColorPickerForm = class(TCustomForm)
   private
     FSelectedColor: TColor32;
@@ -124,9 +131,6 @@ type
 
   { TCustomColorPicker }
   TCustomColorPicker = class(TCustomControl)
-  type
-    TAdjustCalc = procedure (X, Y: Single) of object;
-    TPreserveComponent = set of (pcHue, pcSaturation, pcLuminance, pcValue);
   private
     FBuffer: TBitmap32;
     FAdjustCalc: TAdjustCalc;
@@ -138,11 +142,21 @@ type
     FVisualAidColor: TColor32;
     FVisualAidLineThickness: Single;
     FOnChanged: TNotifyEvent;
+{$IFDEF NOIMP_MOUSEENTERLEAVE}
+    FOnMouseEnter : TNotifyEvent;
+    FOnMouseLeave : TNotifyEvent;
+    FMouseInControl: Boolean;    
+{$ENDIF}    
     procedure SetWebSafe(const Value: Boolean);
     procedure SetSelectedColor(const Value: TColor32);
     procedure SetVisualAidType(const Value: TVisualAidType);
     procedure SetVisualAidColor(const Value: TColor32);
     procedure SetVisualAidLineThickness(const Value: Single);
+{$IFDEF NOIMP_MOUSEENTERLEAVE}
+    procedure CMMouseEnter(var Message: TMessage); message CM_MOUSEENTER;
+    procedure CMMouseLeave(var Message: TMessage); message CM_MOUSELEAVE;
+{$ENDIF}
+
 {$IFDEF FPC}
     procedure WMEraseBkgnd(var Message: TLMEraseBkgnd); message LM_ERASEBKGND;
     procedure WMGetDlgCode(var Msg: TLMessage); message LM_GETDLGCODE;
@@ -159,6 +173,9 @@ type
     destructor Destroy; override;
 
     procedure Invalidate; override;
+    procedure MouseEnter; {$IFDEF FPC} override; {$ELSE} virtual; {$ENDIF}
+    procedure MouseLeave; {$IFDEF FPC} override; {$ELSE} virtual; {$ENDIF}
+    
     procedure Resize; override;
 
     property SelectedColor: TColor32 read FSelectedColor write SetSelectedColor;
@@ -168,14 +185,16 @@ type
     property WebSafe: Boolean read FWebSafe write SetWebSafe;
 
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+{$IFDEF NOIMP_MOUSEENTERLEAVE}
+    property OnMouseEnter: TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
+    property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
+{$ENDIF}
   end;
 
 
   { TCustomColorPickerHS }
+  TMarkerType = (mtCross, mtCircle);
   TCustomColorPickerHS = class(TCustomColorPicker)
-  strict private
-  type
-    TMarkerType = (mtCross, mtCircle);
   private
     FHue: Single;
     FSaturation: Single;
@@ -199,9 +218,8 @@ type
   end;
 
   { TCustomColorPickerHSV }
+  TVisualAid = set of (vaHueLine, vaSaturationCircle, vaSelection);
   TCustomColorPickerHSV = class(TCustomColorPicker)
-  type
-    TVisualAid = set of (vaHueLine, vaSaturationCircle, vaSelection);
   private
     FCenter: TFloatPoint;
     FHue: Single;
@@ -236,9 +254,8 @@ type
   end;
 
   { TCustomColorPickerGTK }
+  TVisualAidGTK = set of (vagHueLine, vagSelection);
   TCustomColorPickerGTK = class(TCustomColorPicker)
-  type
-    TVisualAidGTK = set of (vagHueLine, vagSelection);
   private
     FCenter: TFloatPoint;
     FHue: Single;
@@ -651,11 +668,24 @@ begin
   if FWebSafe then
     Result := FillLineWebSafe
   else
-    Result := inherited;
+    Result := inherited GetFillLine();
 end;
 
 
 { TCustomColorPicker }
+
+procedure TCustomColorPicker.CMMouseEnter(var Message: TMessage);
+begin
+  inherited;
+  MouseEnter;
+end;
+
+
+procedure TCustomColorPicker.CMMouseLeave(var Message: TMessage);
+begin
+  MouseLeave;
+  inherited;
+end;
 
 constructor TCustomColorPicker.Create(AOwner: TComponent);
 begin
@@ -678,6 +708,20 @@ procedure TCustomColorPicker.Invalidate;
 begin
   FBufferValid := False;
   inherited;
+end;
+
+procedure TCustomColorPicker.MouseEnter;
+begin
+  FMouseInControl := True;
+  if Assigned(FOnMouseEnter) then
+    FOnMouseEnter(Self);
+end;
+
+procedure TCustomColorPicker.MouseLeave;
+begin
+  FMouseInControl := False;
+  if Assigned(FOnMouseLeave) then
+    FOnMouseLeave(Self);
 end;
 
 procedure TCustomColorPicker.Paint;
