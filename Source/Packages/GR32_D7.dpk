@@ -37,6 +37,8 @@ contains
   GR32_System in '..\GR32_System.pas',
   GR32_Containers in '..\GR32_Containers.pas',
   GR32_Blend in '..\GR32_Blend.pas',
+  GR32_Brushes in '..\GR32_Brushes.pas',
+  GR32_ColorGradients in '..\GR32_ColorGradients.pas',
   GR32_Transforms in '..\GR32_Transforms.pas',
   GR32_OrdinalMaps in '..\GR32_OrdinalMaps.pas',
   GR32_VectorMaps in '..\GR32_VectorMaps.pas',
