@@ -1330,7 +1330,11 @@ var
 
 begin
   if S = 0 then
-    Exit(Gray32(Round($FF * L)));
+  begin
+    result := Gray32(Round($FF * L));
+
+    Exit;
+  end;
 
   if L <= 0.5 then
     M2 := L * (1 + S)
@@ -1459,7 +1463,10 @@ var
 begin
   V := 255 * V;
   if S = 0 then
-    Exit(Gray32(Trunc(V)));
+  begin
+    result := Gray32(Trunc(V));
+    Exit;
+  end;
 
   H := H - Floor(H);
   Tmp := 6 * H - Floor(6 * H);
