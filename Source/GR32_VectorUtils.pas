@@ -1699,7 +1699,7 @@ begin
     end;
 
     Result[I].X := dy;
-    Result[I].Y := -dx;
+    Result[I].Y := -dx;                                     
 
     Inc(I);
     Inc(NextI);
@@ -1716,8 +1716,16 @@ var
   ResSize, BuffSize: Integer;
   PX, PY: TFloat;
   AngleInv, RMin: TFloat;
-  A, B, Dm: TFloatPoint;
+  A, B, PZ, Dm: TFloatPoint;
+  ZX, ZY: TFloat; //last previous P
+  //ZX : TFloat absolute Z.X;
 
+var
+  I, S, L, H: Integer;  
+
+  procedure Step(var I :integer); forward;
+  procedure AddMitered(const X1, Y1, X2, Y2: TFloat); forward;
+  
   procedure AddPoint(const LongDeltaX, LongDeltaY: TFloat);
   begin
     if ResSize = BuffSize then
@@ -1725,13 +1733,122 @@ var
       Inc(BuffSize, BUFFSIZEINCREMENT);
       SetLength(Result, BuffSize);
     end;
-    Result[ResSize] := FloatPoint(PX + LongDeltaX, PY + LongDeltaY);
+    //Result[ResSize] := FloatPoint(PX + LongDeltaX, PY + LongDeltaY);
+    ZX := PX + LongDeltaX;
+    ZY := PY + LongDeltaY;
+    PZ  := FloatPoint(ZX, ZY);
+    Result[ResSize] := PZ;
+    S := ResSize;
+
     Inc(ResSize);
   end;
 
+  var
+    //V, R, DX, DY: TFloat;
+    L1,L2 : TFloatPoint; // 1st line
+    K,K2 : TFloatPoint; // 2nd line
+    CR : TFloatPoint; // real cross product
+    LS, LS2, LE,LZ : Integer;
+    Concave :Boolean;
+  procedure AddConcaveMitered(const X1, Y1, X2, Y2: TFloat; var I :integer);
+  var
+    G : Integer;
+  var
+    V, R, CX, CY: TFloat;
+  begin
+    Concave := True;
+//V := X1 * Y2 - X2 * Y1; //cross product
+
+    //push
+    //L1  := PZ;
+    //L2 := FloatPoint(PX + Delta * X1, PY + Delta * Y1);
+
+    //AddMitered(X1, Y1, X2, Y2); Exit;
+
+    //trial cross product
+    //AddPoint(Delta * X1, Delta * Y1);
+    //K := PZ;
+    K := FloatPoint(PX + Delta * X1, PY + Delta * Y1 );
+    LS := S; //start line A to compare
+
+    //AddPoint(0,0); //sign here
+
+    //AddPoint(Delta * X2, Delta * Y2);
+    //K2 := PZ;
+    K2 := FloatPoint(PX + Delta * X2, PY + Delta * Y2 );
+    LS2 := S; //start line B to compare
+
+    G := I-1;
+    while (Normals[G].X = 0) and (Normals[G].Y = 0) do
+      Dec(G);
+    L1 := Points[G];
+    L2 := Points[I];
+
+    if Intersect(L1,L2, K,K2, CR) then // does crossing the baseline?
+    begin
+      //real cross needed
+      //AddPoint(PX-CR.X, PY-CR.Y); //sign here
+      AddPoint(Delta * X1, Delta * Y1);
+      AddPoint(Delta * X2, Delta * Y2);
+    end
+    else
+    begin
+      CX := X1 + X2;
+      CY := Y1 + Y2;
+
+      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
+      R := Delta / R;
+      AddPoint(CX * R, CY * R)
+
+    end;  
+    Exit;
+
+    Inc(I); //step forward
+
+    //check
+    while (I+1) <= H do
+    begin
+      //Inc(I); //step forward
+      //K := Z;
+      Step(I);
+      //K2 := Z;
+      Inc(I); //step forward
+
+      {for J := LS2 to S-1 do
+      begin
+        K := Result[J];
+        K2 := Result[J+1];
+
+        if Intersect(L,L2, K,K2, CR) then
+        begin
+          ResSize := LS+1;
+          PX := 0;
+          PY := 0;
+          //Result[LS+1] := CR;
+          AddPoint(CR.X, CR.Y);
+
+          Break;
+        end;
+      end;
+      LS2 :=  S;
+      }
+      //if Intersect(L,L2, K,K2, CR) then
+      //begin
+        //AddPoint(-Delta * X1, -Delta * Y1);
+        //Break;
+        //Exit;
+      //end;
+    end;
+
+    //Inc(I);
+    //Dec(I); //step back
+
+  end;
+  
+
   procedure AddMitered(const X1, Y1, X2, Y2: TFloat);
   var
-    R, CX, CY: TFloat;
+    V, R, CX, CY: TFloat;
   begin
     CX := X1 + X2;
     CY := Y1 + Y2;
@@ -1744,6 +1861,22 @@ var
     end
     else
     begin
+      {V := X1 * Y2 - X2 * Y1; //cross product
+      if V * Delta <= 0 then      //ie angle is concave
+      begin
+        //AddMitered(X1, Y1, X2, Y2);
+        AddPoint(Delta * X1, Delta * Y1); // prior
+        AddPoint(Delta * X2, Delta * Y2); //next * current
+        Exit;
+      end;}
+{      V := X1 * Y2 - X2 * Y1; //cross product
+      if V * Delta <= 0 then      //ie angle is concave
+      begin
+      //AddConcaveMitered(X1, Y1, X2, Y2);
+      AddConcaveMitered(A.X, A.Y, B.X, B.Y);
+      Exit;
+      end;
+}      
       R := Delta / R;
       AddPoint(CX * R, CY * R)
     end;
@@ -1803,21 +1936,64 @@ var
   end;
 
   procedure AddJoin(const X, Y, X1, Y1, X2, Y2: TFloat);
+  var
+    V : TFloat;
   begin
     PX := X;
     PY := Y;
+
+    V := X1 * Y2 - X2 * Y1; //cross product
+    if V * Delta <= 0 then      //ie angle is concave
+    begin
+      AddConcaveMitered(X1, Y1, X2, Y2, I);
+      //AddConcaveMitered(A.X, A.Y, B.X, B.Y, I);
+    end
+    else
+    begin
+
     case JoinStyle of
       jsMiter: AddMitered(A.X, A.Y, B.X, B.Y);
       jsBevel: AddBevelled(A.X, A.Y, B.X, B.Y);
       jsRound: AddRoundedJoin(A.X, A.Y, B.X, B.Y);
     end;
+    end;
   end;
 
-var
-  I, L, H: Integer;
 
+  procedure Step(var I :integer);
+  begin
+     {for I := L to H do
+  begin
+    B := Normals[I];
+    if (B.X = 0) and (B.Y = 0) then Continue;
+
+    with Points[I] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
+    A := B;
+  end;}
+  
+    B := Normals[I];
+    if (B.X = 0) and (B.Y = 0) then
+    begin
+      //Continue;
+      Exit;
+    end;;
+    //if (B.X <> 0) and (B.Y <> 0) then
+    //begin
+      {with Points[I] do
+      begin
+        AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
+      end;}
+    AddJoin(Points[I].X, Points[I].Y, A.X, A.Y, B.X, B.Y);
+      A := B;
+    //end;
+    //Inc(I);
+  end;
+  
+var
+  J : Integer;
 begin
   Result := nil;
+  Concave :=False;
 
   if Length(Points) <= 1 then Exit;
 
@@ -1852,16 +2028,51 @@ begin
     AngleInv := 1 / ArcCos(Dm.X);
   end;
 
-  for I := L to H do
+  {with Points[L] do
+  begin
+    LX := X;
+    LY := Y;
+  end;}
+
+  {for I := L to H do
   begin
     B := Normals[I];
     if (B.X = 0) and (B.Y = 0) then Continue;
 
     with Points[I] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
     A := B;
+  end;}
+
+  I := L;
+  while I <= H do
+  begin
+    Step(I);
+    Inc(I);
+    if Concave then
+    begin
+      {for J := LS2 to S-1 do
+      begin
+        K := Result[J];
+        K2 := Result[J+1];
+
+        if Intersect(L,L2, K,K2, CR) then
+        begin
+          ResSize := LS+1;
+          PX := 0;
+          PY := 0;
+          //Result[LS+1] := CR;
+          AddPoint(CR.X, CR.Y);
+
+          Break;
+        end;
+      end;
+      LS2 :=  S;
+      }
+    end;
   end;
+
   if not Closed then
-    with Points[High(Points)] do AddJoin(X, Y, A.X, A.Y, A.X, A.Y);
+    with Points[High(Points)] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
 
   SetLength(Result, ResSize);
 end;
