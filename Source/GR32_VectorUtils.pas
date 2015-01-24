@@ -1825,15 +1825,22 @@ var
         else
           G := L;
       end;
-      K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
+      //K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
+      K3 := OffsetPoint(Points[G], X2 * Delta, Y2 * Delta ); //next
 
 
-      if False and Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
+      if (Distance(K1,K2) > MINDISTPIXEL ) and  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
       begin
         //real cross needed
       //AddPoint(Delta * X1, Delta * Y1);
-        AddPoint(PX-CR.X, PY-CR.Y); //sign here
-      AddPoint(Delta * X2, Delta * Y2);
+        //AddPoint(PX-CR.X, PY-CR.Y); //sign here
+        //AddPoint(Delta * X2, Delta * Y2);
+        CX := X1 + X2;
+      CY := Y1 + Y2;
+
+      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
+      R := Delta / R;
+      AddPoint(CX * R, CY * R)
       end
       else
       begin
