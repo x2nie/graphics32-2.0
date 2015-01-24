@@ -1745,14 +1745,14 @@ var
 
   var
     //V, R, DX, DY: TFloat;
-    L1,L2 : TFloatPoint; // 1st line
-    K,K2 : TFloatPoint; // 2nd line
     CR : TFloatPoint; // real cross product
     LS, LS2, LE,LZ : Integer;
     Concave :Boolean;
   procedure AddConcaveMitered(const X1, Y1, X2, Y2: TFloat);
   var
-    G : Integer;
+    G,G2 : Integer;
+    L1,L2 : TFloatPoint; // 1st line
+    K0,K1,K2,K3 : TFloatPoint; // 2nd line
   var
     V, R, CX, CY: TFloat;
   begin
@@ -1768,7 +1768,7 @@ var
     //trial cross product
     //AddPoint(Delta * X1, Delta * Y1);
     //K := PZ;
-    K := FloatPoint(PX + Delta * X1, PY + Delta * Y1 );
+    K1 := FloatPoint(PX + Delta * X1, PY + Delta * Y1 );
     LS := S; //start line A to compare
 
     //AddPoint(0,0); //sign here
@@ -1780,11 +1780,25 @@ var
 
     G := I-1;
     while (Normals[G].X = 0) and (Normals[G].Y = 0) do
-      Dec(G);
+    begin
+      if G > L then
+        Dec(G)
+      else
+        G := H;
+    end;
     L1 := Points[G];
-    L2 := Points[I];
 
-    if Intersect(L1,L2, K,K2, CR) then // does crossing the baseline?
+    G2 := I;
+    while (Normals[G2].X = 0) and (Normals[G2].Y = 0) do
+    begin
+      if G2 < H then
+        Inc(G2)
+      else
+        G2 := L;
+    end;
+    L2 := Points[G2];
+
+    if Intersect(L1,L2, K1,K2, CR) then // does crossing the baseline?
     begin
       //real cross needed
       //AddPoint(PX-CR.X, PY-CR.Y); //sign here
@@ -1793,12 +1807,43 @@ var
     end
     else
     begin
-      CX := X1 + X2;
+      {CX := X1 + X2;
       CY := Y1 + Y2;
 
       R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
       R := Delta / R;
-      AddPoint(CX * R, CY * R)
+      //AddPoint(CX * R, CY * R)
+      }
+
+      K0 := PZ;// OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //prior
+      
+      G := I+1;
+      while (Normals[G].X = 0) and (Normals[G].Y = 0) do
+      begin
+        if G < H then
+          Inc(G)
+        else
+          G := L;
+      end;
+      K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
+
+
+      if False and Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
+      begin
+        //real cross needed
+      //AddPoint(Delta * X1, Delta * Y1);
+        AddPoint(PX-CR.X, PY-CR.Y); //sign here
+      AddPoint(Delta * X2, Delta * Y2);
+      end
+      else
+      begin
+      AddPoint(Delta * X1, Delta * Y1);
+      AddPoint(Delta * X2, Delta * Y2);
+
+      end;
+
+
+
 
     end;  
     Exit;
