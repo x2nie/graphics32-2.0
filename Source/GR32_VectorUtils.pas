@@ -1658,13 +1658,29 @@ begin
 
     dx := Points[NextI].X - Points[I].X;
     dy := Points[NextI].Y - Points[I].Y;
-    f := GR32_Math.Hypot(dx, dy);
-    if (f > EPSILON) then
+    //false positive?
+    if not ( (dx = 0) and (dy = 0)) then
+    begin
+
+    if (dx * dy = 0) and (dx + dy <> 0) then
+    begin
+      if dx <> 0 then
+        f := (dx)
+      else
+        f := (dy)
+    end
+    else
+      f := GR32_Math.Hypot(dx, dy);
+
+    //if //(Abs(dx+dy) > EPSILON) or
+    //((f) > EPSILON) then
     begin
       f := 1 / f;
       dx := dx * f;
       dy := dy * f;
     end;
+    end;
+    
     Result[I].X := dy;
 
     Result[I].Y := -dx;
@@ -2054,7 +2070,15 @@ begin
   //1 - cos(ß) = 2/Sqr(MiterLimit) = RMin;
   RMin := 2 / Sqr(MiterLimit);
 
-  H := High(Points) - Ord(not Closed);
+  //H := High(Points) - Ord(not Closed);
+  //correction on somecase
+  H := High(Points);
+  if Closed and (Points[H].X = Points[0].X) and (Points[H].Y = Points[0].Y) then
+    Dec(H);
+
+
+
+  H := H - Ord(not Closed);
   while (H >= 0) and (Normals[H].X = 0) and (Normals[H].Y = 0) do Dec(H);
 
 {** all normals zeroed => Exit }
@@ -2124,7 +2148,13 @@ begin
   end;
 
   if not Closed then
-    with Points[High(Points)] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
+    with Points[High(Points)] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y)
+  {else
+  begin
+    A := Normals[H];
+    B := Normals[L];
+    with Points[H] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y)
+  end};
 
   SetLength(Result, ResSize);
 end;
