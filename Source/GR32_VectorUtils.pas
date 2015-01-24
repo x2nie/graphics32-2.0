@@ -1723,7 +1723,7 @@ var
 var
   I, S, L, H: Integer;  
 
-  procedure Step(var I :integer); forward;
+  procedure Step(); forward;
   procedure AddMitered(const X1, Y1, X2, Y2: TFloat); forward;
   
   procedure AddPoint(const LongDeltaX, LongDeltaY: TFloat);
@@ -1750,7 +1750,7 @@ var
     CR : TFloatPoint; // real cross product
     LS, LS2, LE,LZ : Integer;
     Concave :Boolean;
-  procedure AddConcaveMitered(const X1, Y1, X2, Y2: TFloat; var I :integer);
+  procedure AddConcaveMitered(const X1, Y1, X2, Y2: TFloat);
   var
     G : Integer;
   var
@@ -1810,7 +1810,7 @@ var
     begin
       //Inc(I); //step forward
       //K := Z;
-      Step(I);
+      Step();
       //K2 := Z;
       Inc(I); //step forward
 
@@ -1945,7 +1945,7 @@ var
     V := X1 * Y2 - X2 * Y1; //cross product
     if V * Delta <= 0 then      //ie angle is concave
     begin
-      AddConcaveMitered(X1, Y1, X2, Y2, I);
+      AddConcaveMitered(X1, Y1, X2, Y2);
       //AddConcaveMitered(A.X, A.Y, B.X, B.Y, I);
     end
     else
@@ -1960,7 +1960,7 @@ var
   end;
 
 
-  procedure Step(var I :integer);
+  procedure Step();
   begin
      {for I := L to H do
   begin
@@ -2046,7 +2046,7 @@ begin
   I := L;
   while I <= H do
   begin
-    Step(I);
+    Step();
     Inc(I);
     if Concave then
     begin
