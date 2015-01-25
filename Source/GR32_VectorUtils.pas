@@ -1759,13 +1759,10 @@ var
     Inc(ResSize);
   end;
 
-  var
-    //V, R, DX, DY: TFloat;
-    CR : TFloatPoint; // real cross product
   procedure AddConcaveMitered(const X1, Y1, X2, Y2: TFloat);
   var
     G : Integer;
-    K0,K1,K2,K3 : TFloatPoint; 
+    K0,K1,K2,K3, CR : TFloatPoint;
   var
     R, CX, CY: TFloat;
   begin 
@@ -1811,7 +1808,7 @@ var
 
   procedure AddMitered(const X1, Y1, X2, Y2: TFloat);
   var
-    V, R, CX, CY: TFloat;
+    R, CX, CY: TFloat;
   begin
     CX := X1 + X2;
     CY := Y1 + Y2;
@@ -1830,19 +1827,9 @@ var
   end;
 
   procedure AddBevelled(const X1, Y1, X2, Y2: TFloat);
-  var
-    R: TFloat;
   begin
-    R := X1 * Y2 - X2 * Y1; //cross product
-    if R * Delta <= 0 then      //ie angle is concave
-    begin
-      AddMitered(X1, Y1, X2, Y2);
-    end
-    else
-    begin
-      AddPoint(Delta * X1, Delta * Y1);
-      AddPoint(Delta * X2, Delta * Y2);
-    end;
+    AddPoint(Delta * X1, Delta * Y1);
+    AddPoint(Delta * X2, Delta * Y2);
   end;
 
   procedure AddRoundedJoin(const X1, Y1, X2, Y2: TFloat);
@@ -1854,32 +1841,27 @@ var
     C: TFloatPoint;
   begin
     R := X1 * Y2 - X2 * Y1;
-    if R * Delta <= 0 then
-      AddMitered(X1, Y1, X2, Y2)
+    if R < 0 then
+      Dm.Y := -Abs(Dm.Y)
     else
+      Dm.Y := Abs(Dm.Y);
+
+    tmp := 1 - 0.5 * (Sqr(X2 - X1) + Sqr(Y2 - Y1));
+    da := 0.5 * Pi - tmp * (1 + Sqr(tmp) * 0.1667); // should be ArcCos(tmp);
+    ArcLen := Round(Abs(da * AngleInv)); // should be trunc instead of round
+
+    C.X := X1 * Delta;
+    C.Y := Y1 * Delta;
+    AddPoint(C.X, C.Y);
+    for I := 1 to ArcLen - 1 do
     begin
-      if R < 0 then
-        Dm.Y := -Abs(Dm.Y)
-      else
-        Dm.Y := Abs(Dm.Y);
-
-      tmp := 1 - 0.5 * (Sqr(X2 - X1) + Sqr(Y2 - Y1));
-      da := 0.5 * Pi - tmp * (1 + Sqr(tmp) * 0.1667); // should be ArcCos(tmp);
-      ArcLen := Round(Abs(da * AngleInv)); // should be trunc instead of round
-
-      C.X := X1 * Delta;
-      C.Y := Y1 * Delta;
-      AddPoint(C.X, C.Y);
-      for I := 1 to ArcLen - 1 do
-      begin
-        C := FloatPoint(C.X * Dm.X - C.Y * Dm.Y, C.Y * Dm.X + C.X * Dm.Y);
-        AddPoint(C.X, C.Y);
-      end;
-
-      C.X := X2 * Delta;
-      C.Y := Y2 * Delta;
+      C := FloatPoint(C.X * Dm.X - C.Y * Dm.Y, C.Y * Dm.X + C.X * Dm.Y);
       AddPoint(C.X, C.Y);
     end;
+
+    C.X := X2 * Delta;
+    C.Y := Y2 * Delta;
+    AddPoint(C.X, C.Y);
   end;
 
   procedure AddJoin(const X, Y, X1, Y1, X2, Y2: TFloat);
