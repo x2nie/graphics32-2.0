@@ -1762,60 +1762,22 @@ var
   var
     //V, R, DX, DY: TFloat;
     CR : TFloatPoint; // real cross product
-    LS, LS2, LE,LZ : Integer;
-    Concave :Boolean;
   procedure AddConcaveMitered(const X1, Y1, X2, Y2: TFloat);
   var
-    G,G2 : Integer;
-    L1,L2 : TFloatPoint; // 1st line
-    K0,K1,K2,K3 : TFloatPoint; // 2nd line
+    G : Integer;
+    K0,K1,K2,K3 : TFloatPoint; 
   var
-    V, R, CX, CY: TFloat;
-  begin
-    Concave := True;
-//V := X1 * Y2 - X2 * Y1; //cross product
-
-    //push
-    //L1  := PZ;
-    //L2 := FloatPoint(PX + Delta * X1, PY + Delta * Y1);
-
-    //AddMitered(X1, Y1, X2, Y2); Exit;
-
+    R, CX, CY: TFloat;
+  begin 
     //trial cross product
-    //AddPoint(Delta * X1, Delta * Y1);
-    //K := PZ;
     K1 := FloatPoint(PX + Delta * X1, PY + Delta * Y1 );
-    LS := S; //start line A to compare
-
-    //AddPoint(0,0); //sign here
-
-    //AddPoint(Delta * X2, Delta * Y2);
-    //K2 := PZ;
     K2 := FloatPoint(PX + Delta * X2, PY + Delta * Y2 );
-    LS2 := S; //start line B to compare
 
-    {G := I-1;
-    while (Normals[G].X = 0) and (Normals[G].Y = 0) do
+    if (Distance(K1,K2) > MINDISTPIXEL ) then  // valid cross product may happens
     begin
-      if G > L then
-        Dec(G)
-      else
-        G := H;
-    end;
-    L1 := Points[G];
 
-    G2 := I;
-    while (Normals[G2].X = 0) and (Normals[G2].Y = 0) do
-    begin
-      if G2 < H then
-        Inc(G2)
-      else
-        G2 := L;
-    end;
-    L2 := Points[G2];   }
+      K0 := PZ; //prior
 
-     K0 := PZ;// OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //prior
-      
       G := I+1;
       while (Normals[G].X = 0) and (Normals[G].Y = 0) do
       begin
@@ -1824,163 +1786,25 @@ var
         else
           G := L;
       end;
-      //K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
       K3 := OffsetPoint(Points[G], X2 * Delta, Y2 * Delta ); //next
 
 
-      if (Distance(K1,K2) > MINDISTPIXEL ) and  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
+      if  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
       begin
-        //real cross needed
-      //AddPoint(Delta * X1, Delta * Y1);
-        //AddPoint(PX-CR.X, PY-CR.Y); //sign here
-        //AddPoint(Delta * X2, Delta * Y2);
+        //real cross is needed
         CX := X1 + X2;
-      CY := Y1 + Y2;
+        CY := Y1 + Y2;
 
-      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
-      R := Delta / R;
-      AddPoint(CX * R, CY * R)
-      end
-      else
-      begin
-      AddPoint(Delta * X1, Delta * Y1);
-      AddPoint(Delta * X2, Delta * Y2);
-
+        R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
+        R := Delta / R;
+        AddPoint(CX * R, CY * R);
+        
+        exit;
       end;
-      exit;
-
-
-      
-
-    if Intersect(L1,L2, K1,K2, CR) then // does crossing the baseline?
-    begin
-      //real cross needed
-      //AddPoint(PX-CR.X, PY-CR.Y); //sign here
-      {AddPoint(Delta * X1, Delta * Y1);
-      AddPoint(Delta * X2, Delta * Y2);}
-       K0 := PZ;// OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //prior
-      
-      G := I+1;
-      while (Normals[G].X = 0) and (Normals[G].Y = 0) do
-      begin
-        if G < H then
-          Inc(G)
-        else
-          G := L;
-      end;
-      //K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
-      K3 := OffsetPoint(Points[G], X2 * Delta, Y2 * Delta ); //next
-
-
-      if (Distance(K1,K2) > MINDISTPIXEL ) and  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
-      begin
-        //real cross needed
-      //AddPoint(Delta * X1, Delta * Y1);
-        //AddPoint(PX-CR.X, PY-CR.Y); //sign here
-        //AddPoint(Delta * X2, Delta * Y2);
-        CX := X1 + X2;
-      CY := Y1 + Y2;
-
-      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
-      R := Delta / R;
-      AddPoint(CX * R, CY * R)
-      end
-      else
-      begin
-      AddPoint(Delta * X1, Delta * Y1);
-      AddPoint(Delta * X2, Delta * Y2);
-
-      end;
-    end
-    else
-    begin
-      {CX := X1 + X2;
-      CY := Y1 + Y2;
-
-      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
-      R := Delta / R;
-      //AddPoint(CX * R, CY * R)
-      }
-
-      K0 := PZ;// OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //prior
-      
-      G := I+1;
-      while (Normals[G].X = 0) and (Normals[G].Y = 0) do
-      begin
-        if G < H then
-          Inc(G)
-        else
-          G := L;
-      end;
-      //K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
-      K3 := OffsetPoint(Points[G], X2 * Delta, Y2 * Delta ); //next
-
-
-      if (Distance(K1,K2) > MINDISTPIXEL ) and  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
-      begin
-        //real cross needed
-      //AddPoint(Delta * X1, Delta * Y1);
-        //AddPoint(PX-CR.X, PY-CR.Y); //sign here
-        //AddPoint(Delta * X2, Delta * Y2);
-        CX := X1 + X2;
-      CY := Y1 + Y2;
-
-      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
-      R := Delta / R;
-      AddPoint(CX * R, CY * R)
-      end
-      else
-      begin
-      AddPoint(Delta * X1, Delta * Y1);
-      AddPoint(Delta * X2, Delta * Y2);
-
-      end;
-
-
-
-
-    end;  
-    Exit;
-
-    Inc(I); //step forward
-
-    //check
-    while (I+1) <= H do
-    begin
-      //Inc(I); //step forward
-      //K := Z;
-      Step();
-      //K2 := Z;
-      Inc(I); //step forward
-
-      {for J := LS2 to S-1 do
-      begin
-        K := Result[J];
-        K2 := Result[J+1];
-
-        if Intersect(L,L2, K,K2, CR) then
-        begin
-          ResSize := LS+1;
-          PX := 0;
-          PY := 0;
-          //Result[LS+1] := CR;
-          AddPoint(CR.X, CR.Y);
-
-          Break;
-        end;
-      end;
-      LS2 :=  S;
-      }
-      //if Intersect(L,L2, K,K2, CR) then
-      //begin
-        //AddPoint(-Delta * X1, -Delta * Y1);
-        //Break;
-        //Exit;
-      //end;
     end;
-
-    //Inc(I);
-    //Dec(I); //step back
+    
+    AddPoint(Delta * X1, Delta * Y1);
+    AddPoint(Delta * X2, Delta * Y2);
 
   end;
   
@@ -2000,22 +1824,6 @@ var
     end
     else
     begin
-      {V := X1 * Y2 - X2 * Y1; //cross product
-      if V * Delta <= 0 then      //ie angle is concave
-      begin
-        //AddMitered(X1, Y1, X2, Y2);
-        AddPoint(Delta * X1, Delta * Y1); // prior
-        AddPoint(Delta * X2, Delta * Y2); //next * current
-        Exit;
-      end;}
-{      V := X1 * Y2 - X2 * Y1; //cross product
-      if V * Delta <= 0 then      //ie angle is concave
-      begin
-      //AddConcaveMitered(X1, Y1, X2, Y2);
-      AddConcaveMitered(A.X, A.Y, B.X, B.Y);
-      Exit;
-      end;
-}      
       R := Delta / R;
       AddPoint(CX * R, CY * R)
     end;
@@ -2085,54 +1893,34 @@ var
     if V * Delta <= 0 then      //ie angle is concave
     begin
       AddConcaveMitered(X1, Y1, X2, Y2);
-      //AddConcaveMitered(A.X, A.Y, B.X, B.Y, I);
     end
     else
     begin
 
-    case JoinStyle of
-      jsMiter: AddMitered(A.X, A.Y, B.X, B.Y);
-      jsBevel: AddBevelled(A.X, A.Y, B.X, B.Y);
-      jsRound: AddRoundedJoin(A.X, A.Y, B.X, B.Y);
-    end;
+      case JoinStyle of
+        jsMiter: AddMitered(A.X, A.Y, B.X, B.Y);
+        jsBevel: AddBevelled(A.X, A.Y, B.X, B.Y);
+        jsRound: AddRoundedJoin(A.X, A.Y, B.X, B.Y);
+      end;
     end;
   end;
 
 
   procedure Step();
   begin
-     {for I := L to H do
-  begin
-    B := Normals[I];
-    if (B.X = 0) and (B.Y = 0) then Continue;
-
-    with Points[I] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
-    A := B;
-  end;}
-  
     B := Normals[I];
     if (B.X = 0) and (B.Y = 0) then
     begin
       //Continue;
       Exit;
     end;;
-    //if (B.X <> 0) and (B.Y <> 0) then
-    //begin
-      {with Points[I] do
-      begin
-        AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
-      end;}
+    
     AddJoin(Points[I].X, Points[I].Y, A.X, A.Y, B.X, B.Y);
-      A := B;
-    //end;
-    //Inc(I);
+    A := B;
   end;
   
-var
-  J : Integer;
 begin
   Result := nil;
-  Concave :=False;
 
   if Length(Points) <= 1 then Exit;
 
@@ -2175,57 +1963,15 @@ begin
     AngleInv := 1 / ArcCos(Dm.X);
   end;
 
-  {with Points[L] do
-  begin
-    LX := X;
-    LY := Y;
-  end;}
-
-  {for I := L to H do
-  begin
-    B := Normals[I];
-    if (B.X = 0) and (B.Y = 0) then Continue;
-
-    with Points[I] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
-    A := B;
-  end;}
-
   I := L;
   while I <= H do
   begin
     Step();
     Inc(I);
-    if Concave then
-    begin
-      {for J := LS2 to S-1 do
-      begin
-        K := Result[J];
-        K2 := Result[J+1];
-
-        if Intersect(L,L2, K,K2, CR) then
-        begin
-          ResSize := LS+1;
-          PX := 0;
-          PY := 0;
-          //Result[LS+1] := CR;
-          AddPoint(CR.X, CR.Y);
-
-          Break;
-        end;
-      end;
-      LS2 :=  S;
-      }
-    end;
   end;
 
   if not Closed then
-    with Points[High(Points)] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y)
-  {else
-  begin
-    A := Normals[H];
-    B := Normals[L];
-    with Points[H] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y)
-  end};
+    with Points[High(Points)] do AddJoin(X, Y, A.X, A.Y, B.X, B.Y);
 
   SetLength(Result, ResSize);
 end;
