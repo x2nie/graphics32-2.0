@@ -1659,7 +1659,7 @@ begin
     dx := Points[NextI].X - Points[I].X;
     dy := Points[NextI].Y - Points[I].Y;
     //false positive?
-    if not ( (dx = 0) and (dy = 0)) then
+    {if not ( (dx = 0) and (dy = 0)) then
     begin
 
     if (dx * dy = 0) and (dx + dy <> 0) then
@@ -1669,17 +1669,17 @@ begin
       else
         f := (dy)
     end
-    else
+    else}
       f := GR32_Math.Hypot(dx, dy);
 
     //if //(Abs(dx+dy) > EPSILON) or
-    //((f) > EPSILON) then
+    if ((f) > EPSILON) then
     begin
       f := 1 / f;
       dx := dx * f;
       dy := dy * f;
     end;
-    end;
+   // end;
     
     Result[I].X := dy;
 
