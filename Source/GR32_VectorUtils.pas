@@ -1794,7 +1794,7 @@ var
     K2 := FloatPoint(PX + Delta * X2, PY + Delta * Y2 );
     LS2 := S; //start line B to compare
 
-    G := I-1;
+    {G := I-1;
     while (Normals[G].X = 0) and (Normals[G].Y = 0) do
     begin
       if G > L then
@@ -1812,14 +1812,85 @@ var
       else
         G2 := L;
     end;
-    L2 := Points[G2];
+    L2 := Points[G2];   }
+
+     K0 := PZ;// OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //prior
+      
+      G := I+1;
+      while (Normals[G].X = 0) and (Normals[G].Y = 0) do
+      begin
+        if G < H then
+          Inc(G)
+        else
+          G := L;
+      end;
+      //K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
+      K3 := OffsetPoint(Points[G], X2 * Delta, Y2 * Delta ); //next
+
+
+      if (Distance(K1,K2) > MINDISTPIXEL ) and  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
+      begin
+        //real cross needed
+      //AddPoint(Delta * X1, Delta * Y1);
+        //AddPoint(PX-CR.X, PY-CR.Y); //sign here
+        //AddPoint(Delta * X2, Delta * Y2);
+        CX := X1 + X2;
+      CY := Y1 + Y2;
+
+      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
+      R := Delta / R;
+      AddPoint(CX * R, CY * R)
+      end
+      else
+      begin
+      AddPoint(Delta * X1, Delta * Y1);
+      AddPoint(Delta * X2, Delta * Y2);
+
+      end;
+      exit;
+
+
+      
 
     if Intersect(L1,L2, K1,K2, CR) then // does crossing the baseline?
     begin
       //real cross needed
       //AddPoint(PX-CR.X, PY-CR.Y); //sign here
+      {AddPoint(Delta * X1, Delta * Y1);
+      AddPoint(Delta * X2, Delta * Y2);}
+       K0 := PZ;// OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //prior
+      
+      G := I+1;
+      while (Normals[G].X = 0) and (Normals[G].Y = 0) do
+      begin
+        if G < H then
+          Inc(G)
+        else
+          G := L;
+      end;
+      //K3 := OffsetPoint(Points[G], Normals[G].X * Delta, Normals[G].Y * Delta ); //next
+      K3 := OffsetPoint(Points[G], X2 * Delta, Y2 * Delta ); //next
+
+
+      if (Distance(K1,K2) > MINDISTPIXEL ) and  Intersect(K0,K1, K2,K3, CR) then // does crossing next segment?
+      begin
+        //real cross needed
+      //AddPoint(Delta * X1, Delta * Y1);
+        //AddPoint(PX-CR.X, PY-CR.Y); //sign here
+        //AddPoint(Delta * X2, Delta * Y2);
+        CX := X1 + X2;
+      CY := Y1 + Y2;
+
+      R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
+      R := Delta / R;
+      AddPoint(CX * R, CY * R)
+      end
+      else
+      begin
       AddPoint(Delta * X1, Delta * Y1);
       AddPoint(Delta * X2, Delta * Y2);
+
+      end;
     end
     else
     begin
