@@ -1814,7 +1814,7 @@ var
     CY := Y1 + Y2;
 
     R := X1 * CX + Y1 * CY; //(1 - cos(ß))  (range: 0 <= R <= 2)
-    if R < RMin then
+    if (R < RMin) {and (I <> L) and (I <> H)} then
     begin
       AddPoint(Delta * X1, Delta * Y1);
       AddPoint(Delta * X2, Delta * Y2);
@@ -1871,6 +1871,14 @@ var
     PX := X;
     PY := Y;
 
+    {if Closed and ( (I=L) or (I=H) ) then
+    begin
+      //AddPoint(Points[I].X, Points[I].Y, A.X, A.Y, B.X, B.Y)
+      AddPoint(Delta * X1, Delta * Y1);
+      AddPoint(Delta * X2, Delta * Y2);
+      Exit;
+    end;}
+
     V := X1 * Y2 - X2 * Y1; //cross product
     if V * Delta <= 0 then      //ie angle is concave
     begin
@@ -1895,8 +1903,7 @@ var
     begin
       //Continue;
       Exit;
-    end;;
-    
+    end;
     AddJoin(Points[I].X, Points[I].Y, A.X, A.Y, B.X, B.Y);
     A := B;
   end;
@@ -1914,12 +1921,12 @@ begin
   //H := High(Points) - Ord(not Closed);
   //correction on somecase
   H := High(Points);
-  if Closed and (Points[H].X = Points[0].X) and (Points[H].Y = Points[0].Y) then
-    Dec(H);
+  //if Closed and (Points[H].X = Points[0].X) and (Points[H].Y = Points[0].Y) then
+    //Dec(H);
 
 
 
-  H := H - Ord(not Closed);
+  //H := H - Ord(not Closed);
   while (H >= 0) and (Normals[H].X = 0) and (Normals[H].Y = 0) do Dec(H);
 
 {** all normals zeroed => Exit }
